@@ -41,36 +41,27 @@ const CreatePrescription: React.FC = () => {
 
   const selectedPatientId = watch('patientId');
 
-  // Fetch doctor info for current user (auto-creates if doesn't exist)
-  const { data: doctor, isLoading: loadingDoctor, error: doctorError, isError: isDoctorError, status: doctorStatus } = useQuery({
-    queryKey: ['myDoctor'],
-    queryFn: async () => {
-      console.log('Fetching doctor record via /doctor/me...');
-      const result = await doctorService.getMyDoctorRecord();
-      console.log('Doctor API response:', result);
-      return result;
-    },
-    enabled: !!user, // Only fetch if user is logged in
-    retry: 2,
+  // Fetch doctor info for current user
+  const { data: doctor, isLoading: loadingDoctor, error: doctorError } = useQuery({
+    queryKey: ['doctor', user?.userId || user?.id],
+    queryFn: () => doctorService.getDoctorByUserId((user?.userId || user?.id) || 0),
+    enabled: !!(user?.userId || user?.id),
   });
 
   // Log doctor status for debugging
   useEffect(() => {
-    console.log('=== DOCTOR DEBUG INFO ===');
-    console.log('User object:', user);
-    console.log('Doctor Query Status:', doctorStatus);
-    console.log('Loading Doctor:', loadingDoctor);
-    console.log('Doctor Data:', doctor);
-    console.log('Doctor Error:', doctorError);
-    console.log('Is Doctor Error:', isDoctorError);
-    console.log('=========================');
-    
-    if (isDoctorError && doctorError) {
+    console.log('Doctor loading status:', { 
+      loadingDoctor, 
+      doctor, 
+      doctorError, 
+      userId: user?.userId || user?.id,
+      fullUser: user 
+    });
+    if (doctorError) {
       console.error('Error loading doctor:', doctorError);
-      const errorMsg = doctorError instanceof Error ? doctorError.message : 'Unknown error';
-      setError(`Failed to load doctor information: ${errorMsg}`);
+      setError('Failed to load doctor information. Please refresh the page.');
     }
-  }, [doctor, loadingDoctor, doctorError, isDoctorError, doctorStatus, user]);
+  }, [doctor, loadingDoctor, doctorError, user]);
 
   // Fetch all patients
   const { data: patients, isLoading: loadingPatients } = useQuery({
@@ -157,14 +148,17 @@ const CreatePrescription: React.FC = () => {
 
   return (
     <div className="p-4">
-      <Row className="mb-4">
+      <Row className="mb-4 page-header">
         <Col>
-          <div className="d-flex justify-content-between align-items-center">
+          <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div>
-              <h1 className="h3 mb-0">Create Prescription</h1>
-              <p className="text-muted">Issue a new prescription for a patient</p>
+              <h1 className="h2 mb-1">Create Prescription</h1>
+              <p className="text-muted mb-0">
+                <i className="bi bi-file-earmark-medical me-2"></i>
+                Issue a new prescription for a patient
+              </p>
             </div>
-            <Button variant="outline-secondary" onClick={() => navigate(-1)}>
+            <Button variant="outline-secondary" onClick={() => navigate(-1)} className="hover-lift">
               <i className="bi bi-arrow-left me-2"></i>
               Back
             </Button>
@@ -174,7 +168,7 @@ const CreatePrescription: React.FC = () => {
 
       <Row className="justify-content-center">
         <Col lg={8}>
-          <Card className="border-0 shadow-sm">
+          <Card className="border-0 shadow-soft">
             <Card.Body className="p-4">
               {error && (
                 <Alert variant="danger" dismissible onClose={() => setError('')}>

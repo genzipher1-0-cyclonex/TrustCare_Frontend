@@ -6,18 +6,20 @@ import { prescriptionService } from '../services/prescription.service';
 import { doctorService } from '../services/doctor.service';
 import { useAuth } from '../context/AuthContext';
 import { getErrorMessage } from '../utils/apiClient';
+import CreatePrescriptionModal from '../components/CreatePrescriptionModal';
 
 const ViewPrescriptions: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
 
-  // Fetch doctor info for current user (auto-creates if doesn't exist)
+  // Fetch doctor info for current user
   const { data: doctor } = useQuery({
-    queryKey: ['myDoctor'],
-    queryFn: () => doctorService.getMyDoctorRecord(),
-    enabled: !!user,
+    queryKey: ['doctor', user?.userId || user?.id],
+    queryFn: () => doctorService.getDoctorByUserId((user?.userId || user?.id) || 0),
+    enabled: !!(user?.userId || user?.id),
   });
 
   // Fetch prescriptions for this doctor
@@ -75,19 +77,22 @@ const ViewPrescriptions: React.FC = () => {
 
   return (
     <div className="p-4">
-      <Row className="mb-4">
+      <Row className="mb-4 page-header">
         <Col>
-          <div className="d-flex justify-content-between align-items-center">
+          <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div>
-              <h1 className="h3 mb-0">My Prescriptions</h1>
-              <p className="text-muted">View and manage prescriptions you've issued</p>
+              <h1 className="h2 mb-1">My Prescriptions</h1>
+              <p className="text-muted mb-0">
+                <i className="bi bi-prescription2 me-2"></i>
+                View and manage prescriptions you've issued
+              </p>
             </div>
-            <div>
-              <Button variant="primary" onClick={() => navigate('/doctor/prescriptions/new')} className="me-2">
+            <div className="d-flex gap-2">
+              <Button variant="primary" onClick={() => setShowPrescriptionModal(true)} className="hover-lift">
                 <i className="bi bi-plus-lg me-2"></i>
                 New Prescription
               </Button>
-              <Button variant="outline-secondary" onClick={() => navigate(-1)}>
+              <Button variant="outline-secondary" onClick={() => navigate(-1)} className="hover-lift">
                 <i className="bi bi-arrow-left me-2"></i>
                 Back
               </Button>
@@ -103,42 +108,54 @@ const ViewPrescriptions: React.FC = () => {
         </Alert>
       )}
 
-      <Row className="mb-4">
-        <Col md={4} className="mb-3 mb-md-0">
-          <Card className="border-0 shadow-sm h-100">
-            <Card.Body className="d-flex align-items-center">
-              <div className="bg-primary bg-opacity-10 rounded p-3 me-3">
-                <i className="bi bi-prescription2 fs-2 text-primary"></i>
-              </div>
-              <div>
-                <h3 className="mb-0">{counts.total}</h3>
-                <p className="text-muted mb-0">Total Prescriptions</p>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={4} className="mb-3 mb-md-0">
-          <Card className="border-0 shadow-sm h-100">
-            <Card.Body className="d-flex align-items-center">
-              <div className="bg-success bg-opacity-10 rounded p-3 me-3">
-                <i className="bi bi-check-circle fs-2 text-success"></i>
-              </div>
-              <div>
-                <h3 className="mb-0">{counts.active}</h3>
-                <p className="text-muted mb-0">Active</p>
+      <Row className="g-4 mb-4">
+        <Col md={6} lg={4}>
+          <Card className="border-0 shadow-soft dashboard-card h-100">
+            <Card.Body>
+              <div className="d-flex align-items-center">
+                <div className="flex-shrink-0">
+                  <div className="stats-icon bg-primary bg-opacity-10">
+                    <i className="bi bi-prescription2 text-primary"></i>
+                  </div>
+                </div>
+                <div className="flex-grow-1 ms-3">
+                  <h6 className="text-muted mb-1 fw-semibold" style={{ fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Prescriptions</h6>
+                  <h2 className="mb-0 fw-bold">{counts.total}</h2>
+                </div>
               </div>
             </Card.Body>
           </Card>
         </Col>
-        <Col md={4}>
-          <Card className="border-0 shadow-sm h-100">
-            <Card.Body className="d-flex align-items-center">
-              <div className="bg-warning bg-opacity-10 rounded p-3 me-3">
-                <i className="bi bi-clock-history fs-2 text-warning"></i>
+        <Col md={6} lg={4}>
+          <Card className="border-0 shadow-soft dashboard-card h-100">
+            <Card.Body>
+              <div className="d-flex align-items-center">
+                <div className="flex-shrink-0">
+                  <div className="stats-icon bg-success bg-opacity-10">
+                    <i className="bi bi-check-circle text-success"></i>
+                  </div>
+                </div>
+                <div className="flex-grow-1 ms-3">
+                  <h6 className="text-muted mb-1 fw-semibold" style={{ fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Active</h6>
+                  <h2 className="mb-0 fw-bold">{counts.active}</h2>
+                </div>
               </div>
-              <div>
-                <h3 className="mb-0">{counts.pending}</h3>
-                <p className="text-muted mb-0">Pending</p>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={6} lg={4}>
+          <Card className="border-0 shadow-soft dashboard-card h-100">
+            <Card.Body>
+              <div className="d-flex align-items-center">
+                <div className="flex-shrink-0">
+                  <div className="stats-icon bg-warning bg-opacity-10">
+                    <i className="bi bi-clock-history text-warning"></i>
+                  </div>
+                </div>
+                <div className="flex-grow-1 ms-3">
+                  <h6 className="text-muted mb-1 fw-semibold" style={{ fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Pending</h6>
+                  <h2 className="mb-0 fw-bold">{counts.pending}</h2>
+                </div>
               </div>
             </Card.Body>
           </Card>
@@ -147,20 +164,29 @@ const ViewPrescriptions: React.FC = () => {
 
       <Row className="mb-4">
         <Col md={6} className="mb-3 mb-md-0">
-          <InputGroup>
-            <InputGroup.Text>
-              <i className="bi bi-search"></i>
+          <InputGroup size="lg">
+            <InputGroup.Text className="bg-white">
+              <i className="bi bi-search text-primary"></i>
             </InputGroup.Text>
             <Form.Control
               type="text"
               placeholder="Search by patient name, email, or medication..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              className="border-start-0"
             />
+            {searchTerm && (
+              <Button 
+                variant="outline-secondary" 
+                onClick={() => setSearchTerm('')}
+              >
+                <i className="bi bi-x-lg"></i>
+              </Button>
+            )}
           </InputGroup>
         </Col>
         <Col md={3}>
-          <Form.Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <Form.Select size="lg" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             <option value="ALL">All Status</option>
             <option value="ACTIVE">Active</option>
             <option value="PENDING">Pending</option>
@@ -172,73 +198,80 @@ const ViewPrescriptions: React.FC = () => {
 
       <Row>
         <Col>
-          <Card className="border-0 shadow-sm">
+          <Card className="border-0 shadow-soft">
             <Card.Body>
               {isLoading ? (
-                <div className="text-center py-5">
+                <div className="loading-state">
                   <Spinner animation="border" variant="primary" />
-                  <p className="text-muted mt-3">Loading prescriptions...</p>
+                  <p className="text-muted">Loading prescriptions...</p>
                 </div>
               ) : !filteredPrescriptions || filteredPrescriptions.length === 0 ? (
-                <div className="text-center py-5">
-                  <i className="bi bi-prescription2 fs-1 text-muted"></i>
-                  <p className="text-muted mt-3">
+                <div className="empty-state">
+                  <i className="bi bi-prescription2"></i>
+                  <p className="text-muted">
                     {searchTerm || statusFilter !== 'ALL'
                       ? 'No prescriptions found matching your filters.'
                       : 'No prescriptions found. Create your first prescription!'}
                   </p>
-                  <Button variant="primary" onClick={() => navigate('/doctor/prescriptions/new')}>
+                  <Button variant="primary" onClick={() => setShowPrescriptionModal(true)} className="hover-lift">
                     <i className="bi bi-plus-lg me-2"></i>
                     Create Prescription
                   </Button>
                 </div>
               ) : (
                 <>
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h5 className="mb-0">
-                      Prescription List ({filteredPrescriptions.length}{' '}
-                      {filteredPrescriptions.length === 1 ? 'prescription' : 'prescriptions'})
+                  <div className="d-flex justify-content-between align-items-center mb-4">
+                    <h5 className="mb-0 fw-semibold">
+                      <i className="bi bi-list-ul me-2 text-primary"></i>
+                      Prescription List
+                      <span className="badge bg-gradient-primary ms-2">
+                        {filteredPrescriptions.length}
+                      </span>
                     </h5>
                   </div>
                   <div className="table-responsive">
-                    <Table hover>
+                    <Table hover className="align-middle">
                       <thead className="table-light">
                         <tr>
-                          <th>ID</th>
+                          <th className="text-center" style={{ width: '80px' }}>ID</th>
                           <th>Patient</th>
                           <th>Medication</th>
                           <th>Issued At</th>
-                          <th>Status</th>
-                          <th>Request ID</th>
+                          <th className="text-center" style={{ width: '120px' }}>Status</th>
+                          <th className="text-center" style={{ width: '100px' }}>Request ID</th>
                         </tr>
                       </thead>
                       <tbody>
                         {filteredPrescriptions.map((prescription) => (
                           <tr key={prescription.id}>
-                            <td className="align-middle">
-                              <span className="badge bg-secondary">#{prescription.id}</span>
+                            <td className="text-center">
+                              <span className="badge bg-gradient-secondary">#{prescription.id}</span>
                             </td>
-                            <td className="align-middle">
+                            <td>
                               <div>
-                                <strong>{prescription.patient.name || 'N/A'}</strong>
-                                <br />
+                                <div className="fw-semibold">{prescription.patient.name || 'N/A'}</div>
                                 <small className="text-muted">
+                                  <i className="bi bi-envelope me-1"></i>
                                   {prescription.patient.user.email}
                                 </small>
                               </div>
                             </td>
-                            <td className="align-middle">
+                            <td>
                               <div className="text-truncate" style={{ maxWidth: '300px' }}>
+                                <i className="bi bi-capsule me-2 text-primary"></i>
                                 {prescription.medicationEncrypted}
                               </div>
                             </td>
-                            <td className="align-middle">
-                              <small>{formatDate(prescription.issuedAt)}</small>
+                            <td>
+                              <small>
+                                <i className="bi bi-calendar3 me-1 text-muted"></i>
+                                {formatDate(prescription.issuedAt)}
+                              </small>
                             </td>
-                            <td className="align-middle">{getStatusBadge(prescription.status)}</td>
-                            <td className="align-middle">
+                            <td className="text-center">{getStatusBadge(prescription.status)}</td>
+                            <td className="text-center">
                               {prescription.requestId ? (
-                                <span className="badge bg-info">{prescription.requestId}</span>
+                                <span className="badge bg-gradient-info">{prescription.requestId}</span>
                               ) : (
                                 <span className="text-muted">N/A</span>
                               )}
@@ -254,6 +287,12 @@ const ViewPrescriptions: React.FC = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* Create Prescription Modal */}
+      <CreatePrescriptionModal
+        show={showPrescriptionModal}
+        onHide={() => setShowPrescriptionModal(false)}
+      />
     </div>
   );
 };

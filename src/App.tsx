@@ -21,7 +21,6 @@ import PatientDashboard from './pages/PatientDashboard';
 // Doctor Pages
 import ViewPatients from './pages/ViewPatients';
 import ViewPrescriptions from './pages/ViewPrescriptions';
-import CreatePrescription from './pages/CreatePrescription';
 
 // Configure React Query
 const queryClient = new QueryClient({
@@ -63,7 +62,6 @@ const App: React.FC = () => {
                   <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
                   <Route path="/doctor/patients" element={<ViewPatients />} />
                   <Route path="/doctor/prescriptions" element={<ViewPrescriptions />} />
-                  <Route path="/doctor/prescriptions/new" element={<CreatePrescription />} />
                 </Route>
 
                 {/* Patient Routes */}

@@ -4,10 +4,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { patientService } from '../services/patient.service';
 import { getErrorMessage } from '../utils/apiClient';
+import CreatePrescriptionModal from '../components/CreatePrescriptionModal';
 
 const ViewPatients: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
+  const [selectedPatientId, setSelectedPatientId] = useState<number | undefined>(undefined);
 
   const { data: patients, isLoading, error } = useQuery({
     queryKey: ['patients'],
@@ -46,14 +49,21 @@ const ViewPatients: React.FC = () => {
 
   return (
     <div className="p-4">
-      <Row className="mb-4">
+      <Row className="mb-4 page-header">
         <Col>
-          <div className="d-flex justify-content-between align-items-center">
+          <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div>
-              <h1 className="h3 mb-0">My Patients</h1>
-              <p className="text-muted">View and manage patient information</p>
+              <h1 className="h2 mb-1">My Patients</h1>
+              <p className="text-muted mb-0">
+                <i className="bi bi-people-fill me-2"></i>
+                View and manage patient information
+              </p>
             </div>
-            <Button variant="outline-secondary" onClick={() => navigate(-1)}>
+            <Button 
+              variant="outline-secondary" 
+              onClick={() => navigate(-1)}
+              className="hover-lift"
+            >
               <i className="bi bi-arrow-left me-2"></i>
               Back
             </Button>
@@ -70,78 +80,120 @@ const ViewPatients: React.FC = () => {
 
       <Row className="mb-4">
         <Col lg={6}>
-          <InputGroup>
-            <InputGroup.Text>
-              <i className="bi bi-search"></i>
+          <InputGroup size="lg">
+            <InputGroup.Text className="bg-white">
+              <i className="bi bi-search text-primary"></i>
             </InputGroup.Text>
             <Form.Control
               type="text"
               placeholder="Search by name, email, or contact..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              className="border-start-0"
             />
+            {searchTerm && (
+              <Button 
+                variant="outline-secondary" 
+                onClick={() => setSearchTerm('')}
+              >
+                <i className="bi bi-x-lg"></i>
+              </Button>
+            )}
           </InputGroup>
         </Col>
       </Row>
 
       <Row>
         <Col>
-          <Card className="border-0 shadow-sm">
+          <Card className="border-0 shadow-soft">
             <Card.Body>
               {isLoading ? (
-                <div className="text-center py-5">
+                <div className="loading-state">
                   <Spinner animation="border" variant="primary" />
-                  <p className="text-muted mt-3">Loading patients...</p>
+                  <p className="text-muted">Loading patients...</p>
                 </div>
               ) : !filteredPatients || filteredPatients.length === 0 ? (
-                <div className="text-center py-5">
-                  <i className="bi bi-people fs-1 text-muted"></i>
-                  <p className="text-muted mt-3">
+                <div className="empty-state">
+                  <i className="bi bi-people"></i>
+                  <p className="text-muted">
                     {searchTerm ? 'No patients found matching your search.' : 'No patients found.'}
                   </p>
+                  <Button variant="primary" onClick={() => navigate(-1)} className="hover-lift mt-2">
+                    <i className="bi bi-arrow-left me-2"></i>
+                    Go Back
+                  </Button>
                 </div>
               ) : (
                 <>
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h5 className="mb-0">
-                      Patient List ({filteredPatients.length} {filteredPatients.length === 1 ? 'patient' : 'patients'})
+                  <div className="d-flex justify-content-between align-items-center mb-4">
+                    <h5 className="mb-0 fw-semibold">
+                      <i className="bi bi-list-ul me-2 text-primary"></i>
+                      Patient List
+                      <span className="badge bg-gradient-primary ms-2">
+                        {filteredPatients.length}
+                      </span>
                     </h5>
                   </div>
                   <div className="table-responsive">
-                    <Table hover>
+                    <Table hover className="align-middle">
                       <thead className="table-light">
                         <tr>
-                          <th>ID</th>
+                          <th className="text-center" style={{ width: '80px' }}>ID</th>
                           <th>Name</th>
                           <th>Email</th>
                           <th>Date of Birth</th>
                           <th>Age</th>
                           <th>Contact</th>
-                          <th>Actions</th>
+                          <th className="text-center" style={{ width: '150px' }}>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
                         {filteredPatients.map((patient) => (
                           <tr key={patient.id}>
-                            <td className="align-middle">
-                              <span className="badge bg-secondary">#{patient.id}</span>
+                            <td className="text-center">
+                              <span className="badge bg-gradient-secondary">#{patient.id}</span>
                             </td>
-                            <td className="align-middle">
+                            <td>
                               <div>
-                                <strong>{patient.name || 'N/A'}</strong>
-                                <br />
-                                <small className="text-muted">@{patient.user.username}</small>
+                                <div className="fw-semibold">{patient.name || 'N/A'}</div>
+                                <small className="text-muted">
+                                  <i className="bi bi-person-circle me-1"></i>
+                                  {patient.user.username}
+                                </small>
                               </div>
                             </td>
-                            <td className="align-middle">{patient.user.email}</td>
-                            <td className="align-middle">{formatDate(patient.dob)}</td>
-                            <td className="align-middle">{calculateAge(patient.dob)}</td>
-                            <td className="align-middle">{patient.contactInfo || 'N/A'}</td>
-                            <td className="align-middle">
+                            <td>
+                              <small>
+                                <i className="bi bi-envelope me-1 text-muted"></i>
+                                {patient.user.email}
+                              </small>
+                            </td>
+                            <td>
+                              <small>
+                                <i className="bi bi-calendar3 me-1 text-muted"></i>
+                                {formatDate(patient.dob)}
+                              </small>
+                            </td>
+                            <td>
+                              <span className="badge bg-light text-dark">
+                                {calculateAge(patient.dob)}
+                              </span>
+                            </td>
+                            <td>
+                              <small>
+                                <i className="bi bi-telephone me-1 text-muted"></i>
+                                {patient.contactInfo || 'N/A'}
+                              </small>
+                            </td>
+                            <td className="text-center">
                               <Button
                                 variant="primary"
                                 size="sm"
-                                onClick={() => navigate(`/doctor/prescriptions/new?patientId=${patient.id}`)}
+                                onClick={() => {
+                                  setSelectedPatientId(patient.id);
+                                  setShowPrescriptionModal(true);
+                                }}
+                                className="hover-lift"
                               >
                                 <i className="bi bi-prescription2 me-1"></i>
                                 Prescribe
@@ -160,38 +212,70 @@ const ViewPatients: React.FC = () => {
       </Row>
 
       {patients && patients.length > 0 && (
-        <Row className="mt-4">
-          <Col>
-            <Card className="border-0 shadow-sm bg-light">
+        <Row className="g-4 mt-1">
+          <Col md={6} lg={4}>
+            <Card className="border-0 shadow-soft dashboard-card h-100">
               <Card.Body>
-                <Row>
-                  <Col md={4} className="text-center">
-                    <div className="bg-primary bg-opacity-10 rounded p-3 d-inline-block mb-2">
-                      <i className="bi bi-people fs-2 text-primary"></i>
+                <div className="d-flex align-items-center">
+                  <div className="flex-shrink-0">
+                    <div className="stats-icon bg-primary bg-opacity-10">
+                      <i className="bi bi-people text-primary"></i>
                     </div>
-                    <h4>{patients.length}</h4>
-                    <p className="text-muted mb-0">Total Patients</p>
-                  </Col>
-                  <Col md={4} className="text-center">
-                    <div className="bg-success bg-opacity-10 rounded p-3 d-inline-block mb-2">
-                      <i className="bi bi-calendar-check fs-2 text-success"></i>
+                  </div>
+                  <div className="flex-grow-1 ms-3">
+                    <h6 className="text-muted mb-1 fw-semibold" style={{ fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Patients</h6>
+                    <h2 className="mb-0 fw-bold">{patients.length}</h2>
+                  </div>
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col md={6} lg={4}>
+            <Card className="border-0 shadow-soft dashboard-card h-100">
+              <Card.Body>
+                <div className="d-flex align-items-center">
+                  <div className="flex-shrink-0">
+                    <div className="stats-icon bg-success bg-opacity-10">
+                      <i className="bi bi-calendar-check text-success"></i>
                     </div>
-                    <h4>{patients.filter((p) => p.dob).length}</h4>
-                    <p className="text-muted mb-0">With DOB</p>
-                  </Col>
-                  <Col md={4} className="text-center">
-                    <div className="bg-info bg-opacity-10 rounded p-3 d-inline-block mb-2">
-                      <i className="bi bi-telephone fs-2 text-info"></i>
+                  </div>
+                  <div className="flex-grow-1 ms-3">
+                    <h6 className="text-muted mb-1 fw-semibold" style={{ fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>With DOB</h6>
+                    <h2 className="mb-0 fw-bold">{patients.filter((p) => p.dob).length}</h2>
+                  </div>
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col md={6} lg={4}>
+            <Card className="border-0 shadow-soft dashboard-card h-100">
+              <Card.Body>
+                <div className="d-flex align-items-center">
+                  <div className="flex-shrink-0">
+                    <div className="stats-icon bg-info bg-opacity-10">
+                      <i className="bi bi-telephone text-info"></i>
                     </div>
-                    <h4>{patients.filter((p) => p.contactInfo).length}</h4>
-                    <p className="text-muted mb-0">With Contact Info</p>
-                  </Col>
-                </Row>
+                  </div>
+                  <div className="flex-grow-1 ms-3">
+                    <h6 className="text-muted mb-1 fw-semibold" style={{ fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>With Contact</h6>
+                    <h2 className="mb-0 fw-bold">{patients.filter((p) => p.contactInfo).length}</h2>
+                  </div>
+                </div>
               </Card.Body>
             </Card>
           </Col>
         </Row>
       )}
+
+      {/* Create Prescription Modal */}
+      <CreatePrescriptionModal
+        show={showPrescriptionModal}
+        onHide={() => {
+          setShowPrescriptionModal(false);
+          setSelectedPatientId(undefined);
+        }}
+        preSelectedPatientId={selectedPatientId}
+      />
     </div>
   );
 };

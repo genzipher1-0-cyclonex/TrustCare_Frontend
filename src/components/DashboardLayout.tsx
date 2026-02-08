@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Container, Navbar, Nav, NavDropdown } from 'react-bootstrap';
+import { Container, Navbar, Nav, NavDropdown, Modal, Button } from 'react-bootstrap';
 import { useAuth } from '../context/AuthContext';
 
 interface NavItem {
@@ -14,9 +14,19 @@ const DashboardLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const handleLogout = (): void => {
+  const handleLogoutClick = (): void => {
+    setShowLogoutModal(true);
+  };
+
+  const handleLogoutConfirm = (): void => {
+    setShowLogoutModal(false);
     logout();
+  };
+
+  const handleLogoutCancel = (): void => {
+    setShowLogoutModal(false);
   };
 
   const getNavigationItems = (): NavItem[] => {
@@ -35,8 +45,6 @@ const DashboardLayout: React.FC = () => {
         { path: '/doctor/dashboard', label: 'Dashboard', icon: 'bi-speedometer2' },
         { path: '/doctor/patients', label: 'Patients', icon: 'bi-people' },
         { path: '/doctor/prescriptions', label: 'Prescriptions', icon: 'bi-clipboard2-pulse' },
-        { path: '/doctor/prescriptions/new', label: 'New Prescription', icon: 'bi-prescription2' },
-        { path: '/doctor/appointments', label: 'Appointments', icon: 'bi-calendar-check' },
       ];
     } else if (role === 'PATIENT') {
       return [
@@ -84,7 +92,7 @@ const DashboardLayout: React.FC = () => {
         />
       )}
       {/* Top Navbar */}
-      <Navbar bg="white" className="shadow-sm border-bottom sticky-top">
+      <Navbar bg="white" className="shadow-sm border-bottom sticky-top" style={{ padding: '0.625rem 0' }}>
         <Container fluid>
           <button
             className="btn btn-link text-dark p-0 me-3 d-lg-none"
@@ -92,17 +100,10 @@ const DashboardLayout: React.FC = () => {
           >
             <i className="bi bi-list fs-4"></i>
           </button>
-          <Navbar.Brand className="fw-bold text-primary mb-0">
-            <i className="bi bi-hospital me-2"></i>
+          <Navbar.Brand className="fw-bold text-primary mb-0 d-flex align-items-center" style={{ fontSize: '2rem', lineHeight: '1.5' }}>
             TrustCare
           </Navbar.Brand>
           <Nav className="ms-auto align-items-center">
-            <Nav.Link className="position-relative me-2">
-              <i className="bi bi-bell fs-5"></i>
-              <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '0.6rem' }}>
-                3
-              </span>
-            </Nav.Link>
             <NavDropdown
               title={
                 <span>
@@ -124,16 +125,8 @@ const DashboardLayout: React.FC = () => {
                 <i className="bi bi-speedometer2 me-2"></i>
                 Dashboard
               </NavDropdown.Item>
-              <NavDropdown.Item>
-                <i className="bi bi-person me-2"></i>
-                Profile
-              </NavDropdown.Item>
-              <NavDropdown.Item>
-                <i className="bi bi-gear me-2"></i>
-                Settings
-              </NavDropdown.Item>
               <NavDropdown.Divider />
-              <NavDropdown.Item onClick={handleLogout} className="text-danger">
+              <NavDropdown.Item onClick={handleLogoutClick} className="text-danger">
                 <i className="bi bi-box-arrow-right me-2"></i>
                 Logout
               </NavDropdown.Item>
@@ -145,7 +138,7 @@ const DashboardLayout: React.FC = () => {
       <div className="d-flex flex-grow-1">
         {/* Sidebar */}
         <div
-          className={`bg-dark text-white sidebar d-flex flex-column ${
+          className={`bg-white text-dark sidebar d-flex flex-column border-end ${
             sidebarCollapsed ? 'd-none' : 'd-flex'
           } d-lg-flex`}
           style={{
@@ -158,19 +151,7 @@ const DashboardLayout: React.FC = () => {
             zIndex: 1050,
           }}
         >
-          <div className="p-3 border-bottom border-secondary">
-            <div className="d-flex align-items-center">
-              <div className="bg-primary rounded-circle d-flex align-items-center justify-content-center me-2" style={{ width: '40px', height: '40px' }}>
-                <i className="bi bi-person fs-5"></i>
-              </div>
-              <div className="flex-grow-1">
-                <div className="fw-semibold small">{user?.username}</div>
-                <div className="text-muted small">{user?.role?.roleName}</div>
-              </div>
-            </div>
-          </div>
-
-          <nav className="flex-grow-1 p-2">
+          <nav className="flex-grow-1 p-2 pt-3">
             {navItems.map((item) => (
               <button
                 key={item.path}
@@ -178,7 +159,7 @@ const DashboardLayout: React.FC = () => {
                 className={`btn w-100 text-start mb-1 d-flex align-items-center sidebar-nav-item ${
                   isActiveRoute(item.path)
                     ? 'btn-primary active'
-                    : 'btn-link text-white text-decoration-none'
+                    : 'btn-link text-dark text-decoration-none'
                 }`}
                 style={{
                   borderRadius: '0.375rem',
@@ -191,15 +172,14 @@ const DashboardLayout: React.FC = () => {
             ))}
           </nav>
 
-          <div className="p-3 border-top border-secondary">
-            <div className="small text-muted mb-2">System Status</div>
-            <div className="d-flex justify-content-between align-items-center">
-              <span className="small">Server</span>
-              <span className="badge bg-success">
-                <i className="bi bi-circle-fill me-1" style={{ fontSize: '0.5rem' }}></i>
-                Online
-              </span>
-            </div>
+          <div className="p-3 border-top mt-auto">
+            <button
+              onClick={handleLogoutClick}
+              className="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center"
+            >
+              <i className="bi bi-box-arrow-right me-2"></i>
+              Logout
+            </button>
           </div>
         </div>
 
@@ -237,6 +217,25 @@ const DashboardLayout: React.FC = () => {
           </footer>
         </div>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      <Modal show={showLogoutModal} onHide={handleLogoutCancel} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirm Logout</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Are you sure you want to logout?</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleLogoutCancel}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={handleLogoutConfirm}>
+            <i className="bi bi-box-arrow-right me-2"></i>
+            Logout
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

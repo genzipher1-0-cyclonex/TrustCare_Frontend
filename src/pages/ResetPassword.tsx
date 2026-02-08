@@ -43,7 +43,11 @@ const ResetPassword: React.FC = () => {
       const errorMessage = getErrorMessage(err);
       
       // Handle validation errors from backend
-      setError(errorMessage);
+      if (typeof errorMessage === 'object' && errorMessage !== null && 'errors' in errorMessage) {
+        setError(JSON.stringify((errorMessage as any).errors));
+      } else {
+        setError(errorMessage as string);
+      }
     } finally {
       setIsLoading(false);
     }

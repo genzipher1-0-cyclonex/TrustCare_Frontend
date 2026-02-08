@@ -156,8 +156,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Clear all React Query cache
     queryClient.clear();
     
-    // Navigate to login
-    navigate('/login');
+    // Navigate to login with replace to prevent back button navigation
+    navigate('/login', { replace: true });
   };
 
   const role: UserRole | null = user?.role?.roleName as UserRole || null;
